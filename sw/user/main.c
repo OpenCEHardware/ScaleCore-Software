@@ -1,309 +1,249 @@
 #include <stdio.h>
 #include <stdlib.h>
-//#include <sys/alt_driver.h>
-//#include <sys/alt_irq.h>
-//#include <sys/alt_stdio.h>
 
-#include "alt_types.h"
-#include "altera_avalon_pio_regs.h"
-#include "altera_avalon_timer_regs.h"
-#include "system.h"
+#define NPU_BASE ((volatile unsigned int *)0xc0000000)
 
-// Global variables
-volatile int current_seconds = 0;  // Timer interrupt flag
-int current_hours = 0, current_minutes = 0;
-int alarm_hours = 2, alarm_minutes = 7;  // Default alarm time
-int ammount_pressed_key0 = 0;
-int ammount_pressed_key1 = 0;
-int ammount_pressed_key2 = 0;
-int active_alarm = 0;
-int switchState = 0b00;
+volatile int flag = 0;
 
-/**
- * Decodes a given integer into its corresponding binary segment representation.
- *
- * @param num The integer to be decoded, ranging from -1 to 9.
- *
- * @return The binary segment representation of the input integer.
- */
-int decoder(int num) {
-  int binarySegments = 0b1111111;
-
-  if (num == 0) {
-    binarySegments = 0b1000000;
-  } else if (num == 1) {
-    binarySegments = 0b1111001;
-  } else if (num == 2) {
-    binarySegments = 0b0100100;
-  } else if (num == 3) {
-    binarySegments = 0b0110000;
-  } else if (num == 4) {
-    binarySegments = 0b0011001;
-  } else if (num == 5) {
-    binarySegments = 0b0010010;
-  } else if (num == 6) {
-    binarySegments = 0b0000010;
-  } else if (num == 7) {
-    binarySegments = 0b1111000;
-  } else if (num == 8) {
-    binarySegments = 0b0000000;
-  } else if (num == 9) {
-    binarySegments = 0b0010000;
-  } else if (num == -1) {
-    binarySegments = 0b1111111;
-  } else {
-    binarySegments = 0b0000001;
-  }
-
-  return binarySegments;
-};
-
-/**
- * Decodes a given integer into its corresponding binary segment representation.
- *
- * @param num The integer to be decoded, ranging from -1 to 9.
- *
- * @return The binary segment representation of the input integer.
- */
-void update_time(int *minutes, int *hours) {
-  if (current_seconds >= 60) {
-    current_seconds = 0;
-    (*minutes)++;
-    if (*minutes >= 60) {
-      *minutes = 0;
-      (*hours)++;
-      if (*hours >= 24) *hours = 0;
-    }
-  }
-}
-
-/**
- * Decodes a given integer into its corresponding binary segment representation.
- *
- * @param num The integer to be decoded, ranging from -1 to 9.
- *
- * @return The binary segment representation of the input integer.
- */
-void update_leds_and_buzzer(int *minutes, int *hours) {
-  if (active_alarm % 2 != 0) {
-    IOWR_ALTERA_AVALON_PIO_DATA(LEDS_MINUTES_MS_BASE, decoder(11));
-    IOWR_ALTERA_AVALON_PIO_DATA(LEDS_MINUTES_LS_BASE, decoder(11));
-
-    IOWR_ALTERA_AVALON_PIO_DATA(LEDS_HOURS_MS_BASE, decoder(11));
-    IOWR_ALTERA_AVALON_PIO_DATA(LEDS_HOURS_LS_BASE, decoder(11));
-
-    IOWR_ALTERA_AVALON_PIO_DATA(PIO_BUZZER_BASE, 1);
-
-  } else {
-    IOWR_ALTERA_AVALON_PIO_DATA(LEDS_MINUTES_MS_BASE, decoder((*minutes) / 10));
-    IOWR_ALTERA_AVALON_PIO_DATA(LEDS_MINUTES_LS_BASE, decoder((*minutes) % 10));
-
-    IOWR_ALTERA_AVALON_PIO_DATA(LEDS_HOURS_MS_BASE, decoder((*hours) / 10));
-    IOWR_ALTERA_AVALON_PIO_DATA(LEDS_HOURS_LS_BASE, decoder((*hours) % 10));
-
-    IOWR_ALTERA_AVALON_PIO_DATA(PIO_BUZZER_BASE, 0);
-  }
-  if (active_alarm != 0) {
-    active_alarm--;
-  }
-}
-
-/**
- * Decodes a given integer into its corresponding binary segment representation.
- *
- * @param num The integer to be decoded, ranging from -1 to 9.
- *
- * @return The binary segment representation of the input integer.
- */
-void check_alarm(int c_minutes, int c_hours, int a_minutes, int a_hours) {
-  if (c_hours == a_hours && c_minutes == a_minutes && current_seconds <= 2) {
-    active_alarm = 31;
-    //alt_putstr("TURN ON ALARM\n");
-  }
-}
-
-/**
- * Decodes a given integer into its corresponding binary segment representation.
- *
- * @param num The integer to be decoded, ranging from -1 to 9.
- *
- * @return The binary segment representation of the input integer.
- */
-void set_clock(int *hours, int *minutes) {
-  //
-}
-
-/**
- * Decodes a given integer into its corresponding binary segment representation.
- *
- * @param num The integer to be decoded, ranging from -1 to 9.
- *
- * @return The binary segment representation of the input integer.
- */
 void timer_isr(void /*void *context, alt_u32 id*/) {
-  char str[12];
-  if (ammount_pressed_key2 != 0) {
-    //alt_putstr("key2 = ");
-    //itoa(ammount_pressed_key2, str, 10);
-    //alt_putstr(str);
-    //alt_putstr("\n");
-    current_minutes = 0;
-    current_hours = 0;
-    active_alarm = 0;
-    ammount_pressed_key0 = 0;
-    ammount_pressed_key0 = 0;
-    ammount_pressed_key2 = 0;
-  }
 
-  switchState = IORD_ALTERA_AVALON_PIO_DATA(PIO_SWITCHES_BASE);
 
-  switch (switchState) {
-    case 0b00:
-      // Alarma Encendida
-      update_time(&current_minutes,
-                  &current_hours);  // Actualizar la hora actual
-      check_alarm(current_minutes, current_hours, alarm_minutes, alarm_hours);
-      update_leds_and_buzzer(
-          &current_minutes,
-          &current_hours);  // Actualizar el valor de los LEDs
-      if (active_alarm >= 0) {
-        if ((ammount_pressed_key0 != 0) || (ammount_pressed_key1 != 0)) {
-          active_alarm = 0;
-          //alt_putstr("TURN OFF\n");
-        }
-      }
-      current_seconds += 1;  // Flag that a second has passed
-      break;
-    case 0b01:
-      active_alarm = 0;
-      current_minutes += ammount_pressed_key0;
-      current_minutes = current_minutes >= 60 ? 0 : current_minutes;
-      current_hours += ammount_pressed_key1;
-      current_hours = current_hours >= 24 ? 0 : current_hours;
-      update_leds_and_buzzer(
-          &current_minutes, &current_hours);  // Actualizar el valor de los LEDs
-
-      break;
-
-    case 0b10:
-      active_alarm = 0;
-      alarm_minutes += ammount_pressed_key0;
-      alarm_minutes = alarm_minutes >= 60 ? 0 : alarm_minutes;
-      alarm_hours += ammount_pressed_key1;
-      alarm_hours = alarm_hours >= 24 ? 0 : alarm_hours;
-      update_leds_and_buzzer(&alarm_minutes,
-                             &alarm_hours);  // Actualizar el valor de los LEDs
-
-      break;
-
-    case 0b11:
-      active_alarm = 0;
-      // Alarma Y RELOJ APAGADO
-      int temp = -1;
-      update_leds_and_buzzer(&temp,
-                             &temp);  // Actualizar el valor de los LEDs
-      break;
-
-    default:
-      // Error: no se ha pulsado ninguna tecla
-      break;
-  }
-
-  if (ammount_pressed_key0 != 0) {
-    //alt_putstr("key0 =  ");
-    //itoa(ammount_pressed_key0, str, 10);
-    //alt_putstr(str);
-    //alt_putstr("\n");
-    ammount_pressed_key0 = 0;
-  }
-  if (ammount_pressed_key1 != 0) {
-    //alt_putstr("key1 = ");
-    //itoa(ammount_pressed_key1, str, 10);
-    //alt_putstr(str);
-    //alt_putstr("\n");
-    ammount_pressed_key1 = 0;
-  }
-
-  IOWR_ALTERA_AVALON_TIMER_STATUS(TIMER_BASE, 0);  // Clear the interrupt
-
-  // Check if it is time to activate the alarm
+    if (NPU_BASE[16]){
+        NPU_BASE[16] = 1;
+        flag = 1;
+    }
+    return;
 }
 
-/**
- * Decodes a given integer into its corresponding binary segment representation.
- *
- * @param num The integer to be decoded, ranging from -1 to 9.
- *
- * @return The binary segment representation of the input integer.
- */
-void init_timer() {
-  unsigned int period_value =
-      TIMER_FREQ;  // Calculate the period value for 1 second
-
-  // Set timer period
-  IOWR_ALTERA_AVALON_TIMER_PERIODL(TIMER_BASE, (alt_u16)period_value);
-  IOWR_ALTERA_AVALON_TIMER_PERIODH(TIMER_BASE, (alt_u16)(period_value >> 16));
-
-  // Enable timer with continuous mode and interrupt enabled
-  IOWR_ALTERA_AVALON_TIMER_CONTROL(TIMER_BASE,
-                                   ALTERA_AVALON_TIMER_CONTROL_ITO_MSK |
-                                       ALTERA_AVALON_TIMER_CONTROL_CONT_MSK |
-                                       ALTERA_AVALON_TIMER_CONTROL_START_MSK);
-
-  // Register ISR
-  //alt_ic_isr_register(TIMER_IRQ_INTERRUPT_CONTROLLER_ID, TIMER_IRQ, timer_isr,
-  //                    NULL, NULL);
-}
-
-/**
- * Decodes a given integer into its corresponding binary segment representation.
- *
- * @param num The integer to be decoded, ranging from -1 to 9.
- *
- * @return The binary segment representation of the input integer.
- */
 int main() {
-  IOWR_ALTERA_AVALON_PIO_DATA(LEDS_MINUTES_LS_BASE, decoder(0));
-  IOWR_ALTERA_AVALON_PIO_DATA(LEDS_MINUTES_MS_BASE, decoder(0));
-  IOWR_ALTERA_AVALON_PIO_DATA(LEDS_HOURS_LS_BASE, decoder(0));
-  IOWR_ALTERA_AVALON_PIO_DATA(LEDS_HOURS_MS_BASE, decoder(0));
-  IOWR_ALTERA_AVALON_PIO_DATA(PIO_BUZZER_BASE, 0);
+  
+ // ------ LAYER 1 ------
 
-  init_timer();  // Initialize the timer
-  int state_key0, state_key1, state_key2;
-  int last_state_key0 = 1;
-  int last_state_key1 = 1;
-  int last_state_key2 = 1;
+  int npu_data[32];
 
-  while (1) {
-    // Read current state of each button
-    state_key0 = IORD_ALTERA_AVALON_PIO_DATA(PIO_KEY_0_BASE);
-    state_key1 = IORD_ALTERA_AVALON_PIO_DATA(PIO_KEY_1_BASE);
-    state_key2 = IORD_ALTERA_AVALON_PIO_DATA(PIO_KEY_2_BASE);
+  // Load first layer weigths
+  
+  npu_data[0] = 0xC72BD1C6;
+  npu_data[1] = 0x6D225ECB;
+  npu_data[2] = 0x35E680DD;
+  npu_data[3] = 0xAF7FFBEC;
+  npu_data[4] = 0xF10D0A62;
+  npu_data[5] = 0x254445D5;
+  npu_data[6] = 0x8DFD2555;
+  npu_data[7] = 0xF25F9E92;
 
-    // Check for button 0 release
-    if (last_state_key0 == 0 && state_key0 == 1) {
-      // Button 0 was released
-      ammount_pressed_key0 += 1;
-    }
+  // Load inputs
+  npu_data[8] =  0x00000000;
+  npu_data[9] =  0xB836DC4D;
+  npu_data[10] = 0x00000000;
+  npu_data[11] = 0xA31DE660;
+  npu_data[12] = 0x00000000;
+  npu_data[13] = 0xB221DB5F;
+  npu_data[14] = 0x00000000;
+  npu_data[15] = 0x86C5206E;
 
-    // Check for button 1 release
-    if (last_state_key1 == 0 && state_key1 == 1) {
-      // Button 1 was released
-      ammount_pressed_key1 += 1;
-    }
+  // Load bias
+  npu_data[16] = -128;
+  npu_data[17] =  -91;
+  npu_data[18] =   10;
+  npu_data[19] =  -89;
+  npu_data[20] =   10;
+  npu_data[21] =   10;
+  npu_data[22] =  127;
+  npu_data[23] =   10;
 
-    // Check for button 2 release
-    if (last_state_key2 == 0 && state_key2 == 1) {
-      // Button 2 was released
-      ammount_pressed_key2 += 1;
-    }
+  // Load sums
+  npu_data[24] = 0x00000000;
+  npu_data[25] = 0x00000000;
+  npu_data[26] = 0x00000000;
+  npu_data[27] = 0x00000000;
+  npu_data[28] = 0x00000000;
+  npu_data[29] = 0x00000000;
+  npu_data[30] = 0x00000000;
+  npu_data[31] = 0x00000000;
 
-    // Update last states
-    last_state_key0 = state_key0;
-    last_state_key1 = state_key1;
-    last_state_key2 = state_key2;
+  int npu_result[32];
+
+  // Set up for first layer
+
+  NPU_BASE[2] = 4;  // INROWS
+  NPU_BASE[3] = 8;  // INCOLS
+  NPU_BASE[4] = 4;  // WGHTROWS
+  NPU_BASE[5] = 8;  // WGHTCOLS
+  NPU_BASE[6] = 0;  // REINPUTS
+  NPU_BASE[7] = 0;  // REWEIGHTS
+  NPU_BASE[8] = 1;  // SAVEOUT
+  NPU_BASE[9] = 1;  // USEBIAS
+  NPU_BASE[10] = 1;  // USESUMM
+  NPU_BASE[11] = 7;  // SHIFTAMT
+  NPU_BASE[12] = 1;  // ACTFN
+  NPU_BASE[13] = (unsigned int)npu_data;   // BASE
+  NPU_BASE[14] = (unsigned int)npu_result; // RESULT
+
+  flag = 0;
+  NPU_BASE[15] = 1;  // INIT
+  do {
+    asm volatile ("wfi");
+  } while (!flag);
+
+  int size = sizeof(npu_result) / sizeof(npu_result[0]);  // Calculate the size of the array
+  // Print elements starting from index 2
+  for (int i = 0; i < size; i++) {
+      printf("%d ", npu_result[i]);
+
+      // Print a newline after every 8 elements
+      if ((i + 1) % 8 == 0) {
+          printf("\n");
+      }
   }
+
+  printf("\n");  // New line after printing the array
+  
+
+    
+ // ------ LAYER 2 ------
+
+  int npu_data_2[24];
+
+  // Load layer weigths
+  
+  npu_data_2[0] = 0x5299C738;
+  npu_data_2[1] = 0x3E2CDB58;
+  npu_data_2[2] = 0xCD134E84;
+  npu_data_2[3] = 0xF7B19EC3;
+  npu_data_2[4] = 0xDDFF4442;
+  npu_data_2[5] = 0xED6E4660;
+  npu_data_2[6] = 0x2A208E31;
+  npu_data_2[7] = 0x8A8085F0;
+  npu_data_2[8] = 0xFC96BC58;
+  npu_data_2[9] = 0xDA47B0F0;
+  npu_data_2[10] = 0x41B5F665;
+  npu_data_2[11] = 0xF2CBB6E7;
+  npu_data_2[12] = 0x84CBF84E;
+  npu_data_2[13] = 0x2F6B377F;
+  npu_data_2[14] = 0x25AEA54A;
+  npu_data_2[15] = 0xC5C77ECF;
+
+  // Load bias
+  npu_data_2[16] = -128;
+  npu_data_2[17] =   41;
+  npu_data_2[18] =   18;
+  npu_data_2[19] =  -23;
+  npu_data_2[20] =  127;
+  npu_data_2[21] =   86;
+  npu_data_2[22] =  119;
+  npu_data_2[23] =   15;
+
+
+  int npu_result_2[32];
+
+  // Set up for first layer
+
+  NPU_BASE[2] = 4;  // INROWS
+  NPU_BASE[3] = 8;  // INCOLS
+  NPU_BASE[4] = 8;  // WGHTROWS
+  NPU_BASE[5] = 8;  // WGHTCOLS
+  NPU_BASE[6] = 1;  // REINPUTS
+  NPU_BASE[7] = 0;  // REWEIGHTS
+  NPU_BASE[8] = 1;  // SAVEOUT
+  NPU_BASE[9] = 1;  // USEBIAS
+  NPU_BASE[10] = 0;  // USESUMM
+  NPU_BASE[11] = 7;  // SHIFTAMT
+  NPU_BASE[12] = 1;  // ACTFN
+  NPU_BASE[13] = (unsigned int)npu_data_2;   // BASE
+  NPU_BASE[14] = (unsigned int)npu_result_2; // RESULT
+
+  flag = 0;
+  NPU_BASE[15] = 1;  // INIT
+  do {
+    asm volatile ("wfi");
+  } while (!flag);
+
+  int size_2 = sizeof(npu_result_2) / sizeof(npu_result_2[0]);  // Calculate the size of the array
+  // Print elements starting from index 2
+  for (int i = 0; i < size_2; i++) {
+      printf("%d ", npu_result_2[i]);
+
+      // Print a newline after every 8 elements
+      if ((i + 1) % 8 == 0) {
+          printf("\n");
+      }
+  }
+
+  printf("\n");  // New line after printing the array
+
+    
+ // ------ LAYER 3 ------
+
+
+  int npu_data_3[24];
+
+  // Load layer weigths
+  npu_data_3[0] = 0x008F8993;
+  npu_data_3[1] = 0x00000000;
+  npu_data_3[2] = 0x00E5997F;
+  npu_data_3[3] = 0x00000000;
+  npu_data_3[4] = 0x00D90380;
+  npu_data_3[5] = 0x00000000;
+  npu_data_3[6] = 0x0021813F;
+  npu_data_3[7] = 0x00000000;
+  npu_data_3[8] = 0x00BA2F94;
+  npu_data_3[9] = 0x00000000;
+  npu_data_3[10] = 0x00ACDE5E;
+  npu_data_3[11] = 0x00000000;
+  npu_data_3[12] = 0x005EA0CD;
+  npu_data_3[13] = 0x00000000;
+  npu_data_3[14] = 0x00A69210;
+  npu_data_3[15] = 0x00000000;
+
+  // Load bias
+  npu_data_3[16] = -128;
+  npu_data_3[17] =  -12;
+  npu_data_3[18] =  127;
+  npu_data_3[19] =    0;
+  npu_data_3[20] =    0;
+  npu_data_3[21] =    0;
+  npu_data_3[22] =    0;
+  npu_data_3[23] =    0;
+
+
+  int npu_result_3[32];
+
+  // Set up for first layer
+
+  NPU_BASE[2] = 4;  // INROWS
+  NPU_BASE[3] = 8;  // INCOLS
+  NPU_BASE[4] = 8;  // WGHTROWS
+  NPU_BASE[5] = 8;  // WGHTCOLS
+  NPU_BASE[6] = 1;  // REINPUTS
+  NPU_BASE[7] = 0;  // REWEIGHTS
+  NPU_BASE[8] = 1;  // SAVEOUT
+  NPU_BASE[9] = 1;  // USEBIAS
+  NPU_BASE[10] = 0;  // USESUMM
+  NPU_BASE[11] = 0;  // SHIFTAMT
+  NPU_BASE[12] = 0;  // ACTFN
+  NPU_BASE[13] = (unsigned int)npu_data_3;   // BASE
+  NPU_BASE[14] = (unsigned int)npu_result_3; // RESULT
+
+  flag = 0;
+  NPU_BASE[15] = 1;  // INIT
+  do {
+    asm volatile ("wfi");
+  } while (!flag);
+
+  int size_3 = sizeof(npu_result_3) / sizeof(npu_result_3[0]);  // Calculate the size of the array
+  // Print elements starting from index 2
+  for (int i = 0; i < size_3; i++) {
+      printf("%d ", npu_result_3[i]);
+
+      // Print a newline after every 8 elements
+      if ((i + 1) % 8 == 0) {
+          printf("\n");
+      }
+  }
+
+  printf("\n");  // New line after printing the array
 
   return 0;
+
 }
