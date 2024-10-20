@@ -2,14 +2,24 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "config.h"
+#include "drivers.h"
 #include "m.h"
+
+#ifdef M_DEV_TOHOST
+
+struct m_device_tohost
+{
+	struct m_exit_driver    exit_driver;
+	struct m_console_driver console_driver;
+};
 
 volatile unsigned tohost;
 
 #define HTIF_CALL_WRITE 64
 #define HTIF_FD_STDOUT  1
 
-static unsigned htif_syscall(unsigned which, unsigned arg0, unsigned arg1, unsigned arg2)
+static unsigned m_tohost_call(unsigned which, unsigned arg0, unsigned arg1, unsigned arg2)
 {
 	volatile uint64_t buffer[8] __attribute__((aligned(64)));
 	buffer[0] = which;
@@ -24,54 +34,42 @@ static unsigned htif_syscall(unsigned which, unsigned arg0, unsigned arg1, unsig
 	return (unsigned)buffer[0];
 }
 
-void m_print_chr(char c)
+static void m_dev_tohost_print_char(struct m_console_driver *self, char c)
 {
-	htif_syscall(HTIF_CALL_WRITE, HTIF_FD_STDOUT, (unsigned)&c, sizeof c);
+	(void) self;
+	m_tohost_call(HTIF_CALL_WRITE, HTIF_FD_STDOUT, (unsigned) &c, sizeof c);
 }
 
-void m_print_str(const char *str)
+static void m_dev_tohost_print_str(struct m_console_driver *self, const char *str, size_t length)
 {
-	htif_syscall(HTIF_CALL_WRITE, HTIF_FD_STDOUT, (unsigned)str, strlen(str));
+	(void) self;
+	m_tohost_call(HTIF_CALL_WRITE, HTIF_FD_STDOUT, (unsigned) str, length);
 }
 
-void m_print_hex_bits(unsigned value, int bits)
+static void m_dev_tohost_exit(struct m_exit_driver *self, unsigned code)
 {
-	static const char HEX_DIGITS[16] = "0123456789abcdef";
-
-	char buffer[2 * sizeof value + 1];
-
-	int index = 2 * sizeof value;
-	do {
-		index -= 2;
-
-		unsigned lo = value & 0x0f;
-		unsigned hi = (value >> 4) & 0x0f;
-
-		buffer[index] = HEX_DIGITS[hi];
-		buffer[index + 1] = HEX_DIGITS[lo];
-
-		value >>= 8;
-	} while (index > 0);
-
-	buffer[2 * sizeof value] = '\0';
-
-	int nibbles = (bits + 3) / 4;
-
-	int offset = 2 * sizeof value - nibbles;
-	if (offset < 0 || offset > 2 * sizeof value)
-		offset = 0;
-
-	m_print_str(buffer + offset);
-}
-
-void __attribute__((noreturn)) m_die(unsigned code)
-{
-	M_INFO("cpu halted\n");
+	(void) self;
 
 	__sync_synchronize();
 	tohost = (code << 1) | 1;
 	__sync_synchronize();
-
-	while (1)
-		asm volatile ("wfi");
 }
+
+static struct m_device_tohost m_dev_tohost = {
+	.exit_driver = {
+		.exit = m_dev_tohost_exit,
+	},
+
+	.console_driver = {
+		.print_char = m_dev_tohost_print_char,
+		.print_str  = m_dev_tohost_print_str,
+	},
+};
+
+void m_dev_tohost_init(void)
+{
+	m_exit_driver_register(&m_dev_tohost.exit_driver);
+	m_console_driver_register(&m_dev_tohost.console_driver);
+}
+
+#endif // M_DEV_TOHOST

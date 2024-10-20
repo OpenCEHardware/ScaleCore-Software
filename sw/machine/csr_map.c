@@ -4,7 +4,7 @@
 
 const struct csr_map_entry m_csr_map[] =
 {
-#if M_DEBUG_CSR
+#ifdef M_DEBUG_CSR
 	#define DECLARE_CSR(_name, _csr) \
 		{ .name = #_name, .csr = _csr },
 

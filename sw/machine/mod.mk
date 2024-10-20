@@ -5,6 +5,8 @@ define core/hsv_machine_sw
 
   $(this)/cc_files := \
     csr_map.c \
+    console.c \
+    drivers.c \
     entry_exit.S \
     emulation.c \
     exc_map.c \

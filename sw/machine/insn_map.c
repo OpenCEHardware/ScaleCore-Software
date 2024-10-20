@@ -4,7 +4,7 @@
 
 const struct insn_map_entry m_insn_map[] =
 {
-#if M_DEBUG_INSN
+#ifdef M_DEBUG_INSN
 	#define DECLARE_INSN(_mnemonic, _match, _mask) \
 		{ .mnemonic = #_mnemonic, .match = _match, .mask = _mask },
 
