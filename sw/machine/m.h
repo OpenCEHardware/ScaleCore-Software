@@ -145,12 +145,12 @@ void __attribute__((noreturn)) m_bad_trap(void);
 #define MCAUSE_INTERRUPT  (1 << 31)
 #define MSTATUS_MPP_SHIFT 11
 
-inline int m_trap_from_machine(void)
+static inline int m_trap_from_machine(void)
 {
 	return ((m_trap_context.mstatus & MSTATUS_MPP) >> MSTATUS_MPP_SHIFT) == MACHINE_MODE;
 }
 
-inline int m_trap_from_user(void)
+static inline int m_trap_from_user(void)
 {
 	return ((m_trap_context.mstatus & MSTATUS_MPP) >> MSTATUS_MPP_SHIFT) == USER_MODE;
 }
