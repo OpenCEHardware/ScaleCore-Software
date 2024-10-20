@@ -1,3 +1,4 @@
+#define M_NO_ENCODING
 #include "config.h"
 #include "m.h"
 

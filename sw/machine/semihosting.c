@@ -10,6 +10,11 @@ void m_handle_semihosting(void)
 
 	unsigned ret = 0;
 
+	if (m_trap_from_machine()) {
+		M_LOG("M-to-M call, did you attempt to call libc (e.g. printf) from M-mode?\n");
+		m_bad_trap();
+	}
+
 	switch (call) {
 		case SEMIHOSTING_SYS_WRITEC:
 			m_print_chr(*(const char *)arg1);

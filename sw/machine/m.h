@@ -3,6 +3,10 @@
 
 #include <limits.h>
 
+#ifndef M_NO_ENCODING
+#include "encoding.h"
+#endif
+
 // CPU state before a trap. You can modify register values within a trap
 // handler, they will take effect once the handler returns.
 //
@@ -131,5 +135,20 @@ int  m_try_emulate(unsigned insn);
 
 void __attribute__((noreturn)) m_die(unsigned code);
 void __attribute__((noreturn)) m_bad_trap(void);
+
+#ifndef M_NO_ENCODING
+#define MCAUSE_INTERRUPT  (1 << 31)
+#define MSTATUS_MPP_SHIFT 11
+
+inline int m_trap_from_machine(void)
+{
+	return ((m_trap_context.mstatus & MSTATUS_MPP) >> MSTATUS_MPP_SHIFT) == MACHINE_MODE;
+}
+
+inline int m_trap_from_user(void)
+{
+	return ((m_trap_context.mstatus & MSTATUS_MPP) >> MSTATUS_MPP_SHIFT) == USER_MODE;
+}
+#endif
 
 #endif

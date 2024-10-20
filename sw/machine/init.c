@@ -1,11 +1,9 @@
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "encoding.h"
 #include "m.h"
-
-int u_main(void);
 
 void m_trap_entry(void);
 void __attribute__((noreturn)) m_trap_exit(void);

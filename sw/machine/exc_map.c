@@ -1,3 +1,4 @@
+#define M_NO_ENCODING
 #include "m.h"
 
 const struct exc_map_entry m_exc_map[] =

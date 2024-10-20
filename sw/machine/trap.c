@@ -1,4 +1,3 @@
-#include "encoding.h"
 #include "m.h"
 
 struct trap_context m_trap_context;
@@ -8,9 +7,6 @@ static volatile int m_in_trap;
 static void m_handle_breakpoint(void);
 static void m_handle_illegal(void);
 static char m_mode_char(enum rv_privilege mode);
-
-#define MCAUSE_INTERRUPT  (1 << 31)
-#define MSTATUS_MPP_SHIFT 11
 
 #define CSR_OPS_NUM_MASK   0xfff00000
 #define CSR_OPS_NUM_SHIFT  20

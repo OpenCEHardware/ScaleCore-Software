@@ -1,6 +1,5 @@
 #include <stdint.h>
 
-#include "encoding.h"
 #include "m.h"
 
 #define INSN_FIELD_RD_SHIFT  7
