@@ -11,11 +11,15 @@
 
 // Enable mnemonic decoding for illegal instructions.
 // Adds a large lookup table that includes every RISC-V instruction.
-//#define M_DEBUG_INSN
+//
+// Disable this if you are short on ROM space.
+#define M_DEBUG_INSN
 
 // Similar to M_DEBUG_INSN, but for illegal CSR accesses.
 // Adds a large lookup table that includes every RISC-V CSR.
-//#define M_DEBUG_CSR
+//
+// Disable this if you are short on ROM space.
+#define M_DEBUG_CSR
 
 
 ////////////////////
