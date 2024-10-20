@@ -14,5 +14,6 @@ define core/hsv_machine_sw
     insn_map.c \
     trap.c \
     semihosting.c \
-    tohost.c
+    tohost.c \
+    jtag_uart.c
 endef

@@ -2,6 +2,7 @@
 #define MACHINE_M_H
 
 #include <limits.h>
+#include <stddef.h>
 
 #ifndef M_NO_ENCODING
 #include "encoding.h"
@@ -136,7 +137,11 @@ int  m_try_emulate(unsigned insn);
 void __attribute__((noreturn)) m_die(unsigned code);
 void __attribute__((noreturn)) m_bad_trap(void);
 
+#define container_of(ptr, type, member) \
+	((type *)((void *)(ptr) - offsetof(type, member)))
+
 #ifndef M_NO_ENCODING
+
 #define MCAUSE_INTERRUPT  (1 << 31)
 #define MSTATUS_MPP_SHIFT 11
 
@@ -149,6 +154,7 @@ inline int m_trap_from_user(void)
 {
 	return ((m_trap_context.mstatus & MSTATUS_MPP) >> MSTATUS_MPP_SHIFT) == USER_MODE;
 }
-#endif
+
+#endif // M_NO_ENCODING
 
 #endif

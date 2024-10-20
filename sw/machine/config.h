@@ -28,4 +28,11 @@
 // https://github.com/riscv-software-src/riscv-isa-sim/issues/364
 #define M_DEV_TOHOST
 
+// Enable support for an Altera JTAG UART console device.
+// Unsupported in simulation.
+//
+// M_DEV_ALTERA_JTAG_UART_BASE: base address defined in Platform Designer
+//#define M_DEV_ALTERA_JTAG_UART
+//#define M_DEV_ALTERA_JTAG_UART_BASE 0x800030d8
+
 #endif

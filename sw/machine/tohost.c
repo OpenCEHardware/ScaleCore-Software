@@ -55,7 +55,8 @@ static void m_dev_tohost_exit(struct m_exit_driver *self, unsigned code)
 	__sync_synchronize();
 }
 
-static struct m_device_tohost m_dev_tohost = {
+static struct m_device_tohost m_dev_tohost =
+{
 	.exit_driver = {
 		.exit = m_dev_tohost_exit,
 	},
