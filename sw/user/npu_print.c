@@ -73,6 +73,19 @@ int main() {
 
   int npu_result[32];
 
+//   printf("puntero a pesos inicio: 0x%p\n", &npu_data[0]);
+//   printf("puntero a pesos final:  0x%p\n", &npu_data[7]);
+
+//   printf("puntero a input inicio: 0x%p\n", &npu_data[8]);
+//   printf("puntero a input final:  0x%p\n", &npu_data[15]);
+
+//   printf("puntero a bias inicio: 0x%p\n", &npu_data[16]);
+//   printf("puntero a bias final:  0x%p\n", &npu_data[23]);
+
+//   printf("puntero a result inicio: 0x%p\n", &npu_result[0]);
+//   printf("puntero a result final:  0x%p\n", &npu_result[32]);
+
+
   // Set up for first layer
 
   NPU_BASE[2] = 4;  // INROWS

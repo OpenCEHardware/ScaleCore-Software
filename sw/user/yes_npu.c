@@ -15,9 +15,6 @@ void timer_isr(void /*void *context, alt_u32 id*/) {
 
 void npu_inference() {
 
- // Capture initial cycles
- unsigned long init_cycles = rdl_cycle();
-
  // ------ LAYER 1 ------
 
   int npu_data[32];
@@ -55,30 +52,7 @@ void npu_inference() {
 
   int npu_result[32];
 
-  // Set up for first layer
-
-  NPU_BASE[2] = 4;  // INROWS
-  NPU_BASE[3] = 8;  // INCOLS
-  NPU_BASE[4] = 4;  // WGHTROWS
-  NPU_BASE[5] = 8;  // WGHTCOLS
-  NPU_BASE[6] = 0;  // REINPUTS
-  NPU_BASE[7] = 0;  // REWEIGHTS
-  NPU_BASE[8] = 1;  // SAVEOUT
-  NPU_BASE[9] = 1;  // USEBIAS
-  NPU_BASE[10] = 0;  // USESUMM
-  NPU_BASE[11] = 7;  // SHIFTAMT
-  NPU_BASE[12] = 1;  // ACTFN
-  NPU_BASE[13] = (unsigned int)npu_data;   // BASE
-  NPU_BASE[14] = (unsigned int)npu_result; // RESULT
-
-  flag = 0;
-  NPU_BASE[15] = 1;  // INIT
-  do {
-    asm volatile ("wfi");
-  } while (!flag);
-  
-    
- // ------ LAYER 2 ------
+  // ------ LAYER 2 ------
 
   int npu_data_2[24];
 
@@ -114,29 +88,7 @@ void npu_inference() {
 
   int npu_result_2[32];
 
-  // Set up for first layer
-
-  NPU_BASE[2] = 4;  // INROWS
-  NPU_BASE[3] = 8;  // INCOLS
-  NPU_BASE[4] = 8;  // WGHTROWS
-  NPU_BASE[5] = 8;  // WGHTCOLS
-  NPU_BASE[6] = 1;  // REINPUTS
-  NPU_BASE[7] = 0;  // REWEIGHTS
-  NPU_BASE[8] = 1;  // SAVEOUT
-  NPU_BASE[9] = 1;  // USEBIAS
-  NPU_BASE[10] = 0;  // USESUMM
-  NPU_BASE[11] = 7;  // SHIFTAMT
-  NPU_BASE[12] = 1;  // ACTFN
-  NPU_BASE[13] = (unsigned int)npu_data_2;   // BASE
-  NPU_BASE[14] = (unsigned int)npu_result_2; // RESULT
-
-  flag = 0;
-  NPU_BASE[15] = 1;  // INIT
-  do {
-    asm volatile ("wfi");
-  } while (!flag);
-    
- // ------ LAYER 3 ------
+  // ------ LAYER 3 ------
 
 
   int npu_data_3[24];
@@ -173,6 +125,55 @@ void npu_inference() {
   int npu_result_3[32];
 
   // Set up for first layer
+
+  // Capture initial cycles
+  unsigned long init_cycles = rdl_cycle();
+
+  NPU_BASE[2] = 4;  // INROWS
+  NPU_BASE[3] = 8;  // INCOLS
+  NPU_BASE[4] = 4;  // WGHTROWS
+  NPU_BASE[5] = 8;  // WGHTCOLS
+  NPU_BASE[6] = 0;  // REINPUTS
+  NPU_BASE[7] = 0;  // REWEIGHTS
+  NPU_BASE[8] = 0;  // SAVEOUT
+  NPU_BASE[9] = 1;  // USEBIAS
+  NPU_BASE[10] = 0;  // USESUMM
+  NPU_BASE[11] = 7;  // SHIFTAMT
+  NPU_BASE[12] = 1;  // ACTFN
+  NPU_BASE[13] = (unsigned int)npu_data;   // BASE
+  NPU_BASE[14] = (unsigned int)npu_result; // RESULT
+
+  flag = 0;
+  NPU_BASE[15] = 1;  // INIT
+  do {
+    asm volatile ("wfi");
+  } while (!flag);
+  
+
+  // Set up for second layer
+
+  NPU_BASE[2] = 4;  // INROWS
+  NPU_BASE[3] = 8;  // INCOLS
+  NPU_BASE[4] = 8;  // WGHTROWS
+  NPU_BASE[5] = 8;  // WGHTCOLS
+  NPU_BASE[6] = 1;  // REINPUTS
+  NPU_BASE[7] = 0;  // REWEIGHTS
+  NPU_BASE[8] = 0;  // SAVEOUT
+  NPU_BASE[9] = 1;  // USEBIAS
+  NPU_BASE[10] = 0;  // USESUMM
+  NPU_BASE[11] = 7;  // SHIFTAMT
+  NPU_BASE[12] = 1;  // ACTFN
+  NPU_BASE[13] = (unsigned int)npu_data_2;   // BASE
+  NPU_BASE[14] = (unsigned int)npu_result_2; // RESULT
+
+  flag = 0;
+  NPU_BASE[15] = 1;  // INIT
+  do {
+    asm volatile ("wfi");
+  } while (!flag);
+    
+
+  // Set up for third layer
 
   NPU_BASE[2] = 4;  // INROWS
   NPU_BASE[3] = 8;  // INCOLS

@@ -4,8 +4,11 @@
 #define MEASURE_H
 
 #define NPU_BASE ((volatile unsigned int *)0xc0000000)
-unsigned long rdl_cycle(){
-    return (unsigned long)read_csr(cycleh) << 32 | (unsigned long)read_csr(cycle);
+unsigned long long rdl_cycle(){
+    unsigned long cycle_low = (unsigned long)read_csr(cycle);
+    unsigned long cycle_high = (unsigned long)read_csr(cycleh);
+    return ((unsigned long long)cycle_high << 32) | cycle_low;
 }
+
 
 #endif

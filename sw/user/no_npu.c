@@ -51,9 +51,6 @@ void dense_out(const short *inputs, const int8_t *weights, const int8_t *biases,
 
 void no_npu_inference() {
 
-    // Capture initial cycles
-    unsigned long init_cycles = rdl_cycle();
-
     // Define inputs (scaled to 16-bit short)
     const int8_t input_matrix[4 * INPUT_SIZE] = {
         77, -36, 54, -72,
@@ -105,6 +102,8 @@ void no_npu_inference() {
 
     short results[INPUT_SIZE*OUTPUT_SIZE];
 
+    // Capture initial cycles
+    unsigned long init_cycles = rdl_cycle();
     for (int i = 0; i < 4; i++)
     {
         
