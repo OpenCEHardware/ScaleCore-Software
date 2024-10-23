@@ -268,7 +268,7 @@ int main() {
 
     // Show cycle results
     unsigned long final_cycles = rdl_cycle();
-    printf("Intial cycles: %lu\n",init_cycles);
+    printf("Initial cycles: %lu\n",init_cycles);
     printf("End cycles: %lu\n",final_cycles);
     unsigned long total_cycles = final_cycles - init_cycles;
     printf("Total cycles: %lu\n",total_cycles);

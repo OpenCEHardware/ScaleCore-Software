@@ -2,13 +2,20 @@
 #include <stdlib.h>
 #include "measure.h"
 
-volatile int flag = 0;
+int flag = 0;
+
+// Docs for __atomic_*_fence() barriers:
+// https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
 
 void timer_isr(void /*void *context, alt_u32 id*/) {
 
     if (NPU_BASE[16]){
         NPU_BASE[16] = 1;
+
+        // We need a memory barrier to set flag because this function is asynchronous
+        // from the perspective of npu_inference() (it is essentially a signal handler).
         flag = 1;
+        __atomic_signal_fence(__ATOMIC_RELEASE);
     }
     return;
 }
@@ -143,10 +150,15 @@ void npu_inference() {
   NPU_BASE[13] = (unsigned int)npu_data;   // BASE
   NPU_BASE[14] = (unsigned int)npu_result; // RESULT
 
+  // We issue a memory barrier here to ensure that NPU's view of memory
+  // will be consistent with the buffers that CPU has just written
+  __atomic_thread_fence(__ATOMIC_RELEASE);
+
   flag = 0;
   NPU_BASE[15] = 1;  // INIT
   do {
     asm volatile ("wfi");
+    __atomic_signal_fence(__ATOMIC_ACQUIRE);
   } while (!flag);
   
 
@@ -170,6 +182,7 @@ void npu_inference() {
   NPU_BASE[15] = 1;  // INIT
   do {
     asm volatile ("wfi");
+    __atomic_signal_fence(__ATOMIC_ACQUIRE);
   } while (!flag);
     
 
@@ -196,6 +209,10 @@ void npu_inference() {
   } while (!flag);
   unsigned long final_cycles = rdl_cycle();
 
+  // We issue a memory barrier here to ensure that CPU's view of memory
+  // will be consistent at NPU's output buffers
+  __atomic_thread_fence(__ATOMIC_ACQUIRE);
+
   int size_3 = sizeof(npu_result_3) / sizeof(npu_result_3[0]);  // Calculate the size of the array
   // Print elements starting from index 2
    for (int i = 0; i < size_3; i++) {
@@ -210,7 +227,7 @@ void npu_inference() {
    printf("\n");  // New line after printing the array
 
     // Show cycle results
-    printf("Intial cycles: %lu\n",init_cycles);
+    printf("Initial cycles: %lu\n",init_cycles);
     printf("End cycles: %lu\n",final_cycles);
     unsigned long total_cycles = final_cycles - init_cycles;
     printf("Total cycles: %lu\n",total_cycles);
