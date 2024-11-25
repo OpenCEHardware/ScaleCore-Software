@@ -14,7 +14,7 @@ struct m_device_tohost
 	struct m_console_driver console_driver;
 };
 
-volatile unsigned tohost;
+volatile uint64_t tohost[2];
 
 #define HTIF_CALL_WRITE 64
 #define HTIF_FD_STDOUT  1
@@ -28,7 +28,7 @@ static unsigned m_tohost_call(unsigned which, unsigned arg0, unsigned arg1, unsi
 	buffer[3] = arg2;
 
 	__sync_synchronize();
-	tohost = (uintptr_t)buffer;
+	tohost[0] = (uintptr_t)buffer;
 	__sync_synchronize();
 
 	return (unsigned)buffer[0];
@@ -51,7 +51,7 @@ static void m_dev_tohost_exit(struct m_exit_driver *self, unsigned code)
 	(void) self;
 
 	__sync_synchronize();
-	tohost = (code << 1) | 1;
+	tohost[0] = (code << 1) | 1;
 	__sync_synchronize();
 }
 

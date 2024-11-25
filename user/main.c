@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "yes_npu.c"
-#include "no_npu.c"
+#include "yes_npu.h"
+#include "no_npu.h"
 
 int main() {
 
@@ -16,6 +16,7 @@ int main() {
     printf("With NPU results:\n\n");
     npu_inference();
 
+  exit(0);
   return 0;
 
 }
