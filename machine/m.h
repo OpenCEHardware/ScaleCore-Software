@@ -3,6 +3,7 @@
 
 #include <limits.h>
 #include <stddef.h>
+#include <sys/types.h>
 
 #ifndef M_NO_ENCODING
 #include "encoding.h"
@@ -131,8 +132,10 @@ static inline void m_print_hex(unsigned value)
 #define M_INFO(msg) m_print_str("[m] " msg)
 #define M_LOG(msg)  do { m_print_str("[m] "); m_print_str(__func__); m_print_str("(): " msg); } while (0)
 
-void m_handle_semihosting(void);
+void m_handle_semihosting_syscall(void);
 int  m_try_emulate(unsigned insn);
+
+extern struct m_file m_semihosting_features_file;
 
 void __attribute__((noreturn)) m_die(unsigned code);
 void __attribute__((noreturn)) m_bad_trap(void);
@@ -156,5 +159,55 @@ static inline int m_trap_from_user(void)
 }
 
 #endif // M_NO_ENCODING
+
+// A process can open up to M_OPEN_MAX files
+#define M_OPEN_MAX 8
+
+struct m_file_descriptor;
+
+struct m_file_ops
+{
+	// Read data. Callee is responsible for updating desc->offset.
+	// Returns the number of bytes successfully read.
+	int (*read)(struct m_file_descriptor *desc, void *buf, size_t length);
+
+	// Get the file's length, if it is finite and known.
+	int (*flen)(struct m_file_descriptor *desc);
+
+	// Seek to an arbitrary offset within the file.
+	int (*seek)(struct m_file_descriptor *desc, off_t offset);
+
+	// Is this file a TTY? Defaults to false if not implemented.
+	int (*istty)(struct m_file_descriptor *desc);
+};
+
+struct m_file
+{
+	const struct m_file_ops *ops;
+};
+
+// Open file, associated with a fd number
+struct m_file_descriptor
+{
+	struct m_file *file;
+	off_t          offset;
+};
+
+// Process control block
+extern struct m_process
+{
+	int semihost_errno; // error number from last semihosting syscall
+
+	struct m_file_descriptor open_files[M_OPEN_MAX];
+} *m_current_process;
+
+// System calls related to file I/O
+
+int m_sys_open(const char *path, int mode);
+int m_sys_flen(int fd);
+int m_sys_read(int fd, void *buf, size_t length);
+int m_sys_seek(int fd, off_t offset);
+int m_sys_close(int fd);
+int m_sys_istty(int fd);
 
 #endif

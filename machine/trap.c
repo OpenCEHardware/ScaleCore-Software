@@ -77,7 +77,24 @@ void __attribute__((noreturn)) m_bad_trap(void)
 		m_print_str("interrupt\n");
 	else {
 		m_print_str(exc_cause);
-		m_print_str(" exception\n");
+		m_print_str(" exception");
+
+		switch (m_trap_context.mcause) {
+			case CAUSE_LOAD_ACCESS:
+			case CAUSE_FETCH_ACCESS:
+			case CAUSE_STORE_ACCESS:
+			case CAUSE_MISALIGNED_LOAD:
+			case CAUSE_MISALIGNED_FETCH:
+			case CAUSE_MISALIGNED_STORE:
+				m_print_str(" at address ");
+				m_print_hex(m_trap_context.mtval);
+				break;
+
+			default:
+				break;
+		}
+
+		m_print_chr('\n');
 	}
 
 	m_print_str("pc=");
@@ -159,7 +176,7 @@ static void m_handle_breakpoint(void)
 {
 	const unsigned *code = (const unsigned *)m_trap_context.pc;
 	if (code[-1] == SEMIHOSTING_MAGIC_PRE && code[1] == SEMIHOSTING_MAGIC_POST) {
-		m_handle_semihosting();
+		m_handle_semihosting_syscall();
 		return;
 	}
 
