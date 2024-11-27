@@ -6,7 +6,7 @@
 #include <sys/types.h>
 
 #ifndef M_NO_ENCODING
-#include "encoding.h"
+#include "../encoding.h"
 #endif
 
 // CPU state before a trap. You can modify register values within a trap

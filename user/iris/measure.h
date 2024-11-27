@@ -1,4 +1,4 @@
-#include "../machine/encoding.h"
+#include "../../encoding.h"
 
 #ifndef MEASURE_H
 #define MEASURE_H
